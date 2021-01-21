@@ -24,6 +24,7 @@
     "chrome-https": "^2.0.1",
     "express": "^4.17.1",
     "moment": "^2.22.2",
+    "pg": "^8.5.1",
     "post-message-stream": "^3.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.5.2",
