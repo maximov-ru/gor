@@ -1,0 +1,53 @@
+{
+  "name": "browser-wallet",
+  "version": "1.0.0",
+  "author": "https://gotiger.com",
+  "scripts": {
+    "build": "browserify -t [ babelify --presets [ es2015 react stage-1 ] --plugins transform-runtime] src/index.js -o app.js",
+    "build:dist": "npm run clean && npm run mkdirs && npm run copyfiles && npm run copyfiles2",
+    "mkdirs": "mkdir dist && cd dist && mkdir icons",
+    "clean": "rimraf dist",
+    "copyfiles": "cp -r icons/* dist/icons && cp app.js dist && cp popup.html dist && cp manifest.json dist && cp wallet-logo.png dist",
+    "copyfiles2": "cp background.js dist && cp notification.html dist && cp contentpage.js dist && cp inject.js dist && cp proxy-mode.js dist"
+  },
+  "dependencies": {
+    "@material-ui/core": "^3.2.0",
+    "@material-ui/icons": "^3.0.1",
+    "aes256": "^1.0.4",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.7.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-1": "^6.24.1",
+    "browserify": "^16.2.3",
+    "chrome-https": "^2.0.1",
+    "moment": "^2.22.2",
+    "post-message-stream": "^3.0.0",
+    "prop-types": "^15.6.2",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "react-redux": "^5.0.7",
+    "redux": "^4.0.0",
+    "redux-logger": "^3.0.6",
+    "redux-thunk": "^2.3.0",
+    "redux-undo": "^0.6.1",
+    "sockjs-client": "^1.3.0",
+    "stomp-client": "^0.9.0",
+    "stompjs": "^2.3.3",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.2.3",
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babelify": "^8.0.0",
+    "brfs": "^2.0.1",
+    "browserify": "^16.2.3",
+    "fs-extra": "^7.0.1",
+    "fs-promise": "^2.0.3",
+    "path": "^0.12.7",
+    "redux-devtools": "^3.1.1"
+  }
+}
