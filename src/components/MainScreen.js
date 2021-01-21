@@ -102,9 +102,9 @@ class MainScreen extends Component {
                     <Table className={classes.table}>
                         <TableHead>
                             <TableRow>
-                                <TableCell className={classes.headCell}>Total Drivers</TableCell>
-                                <TableCell className={classes.headCell}>Total clients</TableCell>
-                                <TableCell className={classes.headCell}>Total Profit</TableCell>
+                                <TableCell className={classes.headCell}>Район</TableCell>
+                                <TableCell className={classes.headCell}>Название мед организации</TableCell>
+                                <TableCell className={classes.headCell}>количество номерков</TableCell>
                                 <TableCell className={classes.headCell}>Total completed trips</TableCell>
                                 <TableCell className={classes.headCell}>Trips</TableCell>
                             </TableRow>

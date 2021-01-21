@@ -136,6 +136,42 @@ function checkProxy(proxy) {
     });
 }
 
+function makeRequest(Url) {
+    return new Promise((resolve, reject) => {
+        let state_complete = false;
+        let isValid = false;
+        let req = request(
+
+            {
+                url: Url,
+                //proxy: 'http://' + proxy,
+                timeout: 4000,
+                time: true
+            },
+            (error, response, body) => {
+                if (!error) {
+                    if(!state_complete){
+                        state_complete = true;
+                        resolve(body);
+                    }
+                } else {
+                    if (!state_complete) {
+                        state_complete = true;
+                        reject(error);
+                    }
+                }
+            }
+        );
+        setTimeout(() => {
+            if(!state_complete) {
+                state_complete = true;
+                req.abort();
+                reject('timeout');
+            }
+        }, 4000)
+    });
+}
+
 async function checkingThread() {
     console.log('chk');
     await new Promise(resolve => setTimeout(resolve, 60000));
