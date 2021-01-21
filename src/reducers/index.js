@@ -1,5 +1,4 @@
 import { combineReducers } from 'redux';
-import { WorkMode } from '../constants/mode';
 import screen from './screen';
 import main_data from './main_data';
 
@@ -9,6 +8,6 @@ const reducers = {
     main: main_data
 };
 
-const walletStore = combineReducers(reducers);
+const siteStore = combineReducers(reducers);
 
-export default walletStore
+export default siteStore

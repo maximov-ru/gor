@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "author": "https://gotiger.com",
   "scripts": {
-    "build": "browserify -t [ babelify --presets [ es2015 react stage-1 ] --plugins transform-runtime] src/index.js -o app.js",
+    "build": "browserify -t [ babelify --presets [ es2015 react stage-1 ] --plugins transform-runtime] src/index.js -o dist/app.js",
     "build:dist": "npm run clean && npm run mkdirs && npm run copyfiles && npm run copyfiles2",
     "mkdirs": "mkdir dist && cd dist && mkdir icons",
     "clean": "rimraf dist",

@@ -1,4 +1,4 @@
 .idea
-app.js
+dist/app.js
 package-lock.json
 .DS_Store

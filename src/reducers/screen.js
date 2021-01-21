@@ -1,6 +1,4 @@
 import { ActionsList } from '../actions';
-import { WorkMode } from '../constants/mode';
-import { createStoredReducer } from '../models/StoredReducer';
 
 export const ScreenNames = {
     'MAIN_SCREEN': 'MAIN_SCREEN'
