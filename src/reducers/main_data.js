@@ -1,8 +1,4 @@
-
-const initialState = {
-    lpu: [{description: 'abc', id: 1}]
-};
-
+const initialState = {allData: window.allData};
 const main_data = (state = initialState, action) => {
     switch (action.type) {
         default:

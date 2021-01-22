@@ -10,4 +10,4 @@ const reducers = {
 
 const siteStore = combineReducers(reducers);
 
-export default siteStore
+export default () => siteStore

@@ -17,7 +17,7 @@ import TableBody from "../../node_modules/@material-ui/core/TableBody/TableBody"
 import IconButton from '@material-ui/core/IconButton';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import Checkbox from '@material-ui/core/Checkbox';
-
+const moment = require('moment');
 
 const CUSTOM_ID = 'custom';
 
@@ -63,7 +63,8 @@ class MainScreen extends Component {
     render() {
         const {classes, main} = this.props;
         const { completed, buffer, selectedIds } = this.state;
-        const {lpu} = main;
+        //console.log('main');
+        const allData = window.allData;
 
         return (
             <Grid
@@ -75,27 +76,35 @@ class MainScreen extends Component {
                             <TableRow>
                                 <TableCell className={classes.headCell}>Район</TableCell>
                                 <TableCell className={classes.headCell}>Название мед организации</TableCell>
-                                <TableCell className={classes.headCell}>количество номерков</TableCell>
+                                <TableCell className={classes.headCell}>Адрес</TableCell>
+                                <TableCell className={classes.headCell}>Телефон</TableCell>
+                                <TableCell className={classes.headCell}>Количество доступных записей/номерков</TableCell>
                                 <TableCell className={classes.headCell}>Ближайшая запись</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {
-                                lpu.length > 0
-                                    ? lpu.map(item => {
+                                allData.length > 0
+                                    ? allData.map(item => {
 
                                            return <TableRow className={classes.tRow} key={item.id}>
                                                <TableCell scope="row" className={classes.bodyCell}>
-                                                   {item.description}
+                                                   {item.name}
                                                </TableCell>
                                                <TableCell scope="row" className={classes.bodyCell}>
-                                                   {item.description}
+                                                   {item.short_name}
                                                </TableCell>
                                                <TableCell scope="row" className={classes.bodyCell}>
-                                                   {item.description}
+                                                   {item.address}
                                                </TableCell>
                                                <TableCell scope="row" className={classes.bodyCell}>
-                                                   {item.description}
+                                                   {item.phone}
+                                               </TableCell>
+                                               <TableCell scope="row" className={classes.bodyCell}>
+                                                   {item.count_free_participant}({item.count_free_ticket})
+                                               </TableCell>
+                                               <TableCell scope="row" className={classes.bodyCell}>
+                                                   {item.nearest_date ? moment(item.nearest_date).format('DD.MM.YYYY') : ''}
                                                </TableCell>
                                            </TableRow>
                                         })
