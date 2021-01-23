@@ -1,14 +1,14 @@
 # Spring Boot configuration
 spring:
 
-  # Database
+  # Database configuration
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://185.22.62.114:5432/gorzdrav
     username: postgres
     password: elkin25pass
 
-  # JPA properties
+  # JPA configuration
   jpa:
     hibernate:
       ddl-auto: none
@@ -21,10 +21,15 @@ logging:
   pattern:
     console: "%d %-5level %logger : %msg%n"
   level:
-    org.springframework: DEBUG
-    org.hibernate: DEBUG
+    org.springframework: INFO
+    org.hibernate: INFO
 
 # Server configuration
 server:
   port: 8080
   sessionTimeout: 30
+
+# parser configuration
+parser:
+  specialityUpdateTimePeriodInSec: 300
+  lpuUpdateTime: "22:00"

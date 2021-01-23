@@ -16,7 +16,6 @@ public class LpuEntity {
 
     @Id
     @Column
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column
@@ -26,10 +25,10 @@ public class LpuEntity {
     private Integer districtId;
 
     @Column(name = "full_name")
-    private String fullName;
+    private String lpuFullName;
 
     @Column(name = "short_name")
-    private String shortName;
+    private String lpuShortName;
 
     @Column
     private String address;
@@ -43,10 +42,10 @@ public class LpuEntity {
     @Column
     private Double longitude;
 
-    @Column
-    private Double latitude;
+    @Column(name = "latitude")
+    private Double latitide;
 
-    @Column(name = "is_covid_vaccination")
-    private Boolean isCovidVaccination;
+    @Column(name = "covid_vaccination")
+    private Boolean covidVaccination;
 
 }

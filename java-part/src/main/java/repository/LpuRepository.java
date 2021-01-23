@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface LpuRepository extends JpaRepository<LpuEntity, Integer> {
 
-    @Query(value = "Select * from lpu where is_covid_vaccination = true", nativeQuery = true)
+    @Query(value = "Select * from lpu where covid_vaccination = true", nativeQuery = true)
     List<LpuEntity> getCovidLpuIds();
 }

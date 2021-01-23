@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import java.time.Duration;
 
 @SpringBootApplication
-@ComponentScan(basePackages = "parser")
+@ComponentScan(basePackages = { "parser", "settings" })
 @EntityScan("entity")
 @EnableJpaRepositories("repository")
 public class Application {

@@ -4,8 +4,6 @@ import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.time.LocalDateTime;
@@ -29,17 +27,14 @@ public class SpecialityEntity {
     private Integer countFreeTicket;
 
     @Column(name = "last_date")
-    private LocalDateTime lastDate;
+    private String lastDate;
 
     @Column(name = "nearest_date")
-    private LocalDateTime nearestDate;
+    private String nearestDate;
 
     @Column
     private String name;
 
     @Column(name = "lpu_id")
     private Integer lpuId;
-
-    @Column(name = "last_update")
-    private LocalDateTime lastUpdate;
 }

@@ -17,4 +17,8 @@ public class ExecutableQueries {
         em.createNativeQuery("truncate table speciality").executeUpdate();
     }
 
+    public void truncateLpu() {
+        em.createNativeQuery("truncate table lpu").executeUpdate();
+    }
+
 }
