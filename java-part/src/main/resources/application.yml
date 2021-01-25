@@ -33,3 +33,7 @@ server:
 parser:
   specialityUpdateTimePeriodInSec: 300
   lpuUpdateTime: "22:00"
+
+email:
+  username: covvacmailsender@gmail.com
+  password: mail5cov1sender!

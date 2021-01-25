@@ -1,31 +1,45 @@
 package parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import entity.DistrictEntity;
 import entity.LpuEntity;
 import entity.SpecialityEntity;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import model.LpuResponse;
+import model.SpecialityChanges;
 import model.SpecialityResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import repository.DistrictRepository;
 import repository.LpuRepository;
 import repository.SpecialityRepository;
 import settings.ParserSettings;
 
 import javax.annotation.PostConstruct;
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -37,8 +51,11 @@ public class Parser {
     private volatile LocalDateTime nextLpuUpdate = null;
     private volatile LocalDateTime now = null;
     private volatile LocalTime lpuUpdateTime = null;
+    private volatile Map<Integer, LpuEntity> idToLpuMap = new HashMap<>();
+    private volatile Map<Integer, DistrictEntity> idToDistrictMap = new HashMap<>();
 
-    private final List<LpuEntity> lpus = new LinkedList<>();
+    private List<LpuEntity> lpus = new LinkedList<>();
+    private List<SpecialityEntity> lastSpeciality;
 
     @Autowired
     private ParserSettings parserSettings;
@@ -50,6 +67,9 @@ public class Parser {
     private SpecialityRepository specialityRepository;
 
     @Autowired
+    private DistrictRepository districtRepository;
+
+    @Autowired
     private ExecutableQueries executableQueries;
 
     @Autowired
@@ -58,21 +78,25 @@ public class Parser {
     @Autowired
     private OkHttpClient httpClient;
 
+    @Autowired
+    private JavaMailSender mailSender;
+
     private final Supplier<Boolean> activateUpdateSpeciality =
             () -> nextSpecialityUpdate == null || LocalDateTime.now().isAfter(nextSpecialityUpdate);
     private final Supplier<Boolean> activateUpdateLpu =
             () -> nextLpuUpdate == null || LocalDateTime.now().isAfter(nextLpuUpdate);
 
     @PostConstruct
-    public void init() throws InterruptedException {
+    public void init() throws InterruptedException, MessagingException {
+        idToDistrictMap = districtRepository.findAll().stream().collect(Collectors.toMap(DistrictEntity::getId, x -> x));
+
         val currentThread = Thread.currentThread();
         lpuUpdateTime = LocalTime.parse(parserSettings.getLpuUpdateTime());
 
-        lpus.clear();
-        lpus.addAll(lpuRepository.getCovidLpuIds());
+        lpus = lpuRepository.getCovidLpuIds().stream().filter(LpuEntity::getCovidVaccination).collect(Collectors.toList());
+        idToLpuMap = lpus.stream().collect(Collectors.toMap(LpuEntity::getId, x -> x));
 
-        if (!CollectionUtils.isEmpty(lpus))
-            setNextLpuUpdate();
+        setNextLpuUpdate();
 
         while (!currentThread.isInterrupted()) {
             if (activateUpdateLpu.get() && updateLpu())
@@ -80,7 +104,8 @@ public class Parser {
             if (activateUpdateSpeciality.get() && updateSpeciality())
                 nextSpecialityUpdate = now.plusSeconds(parserSettings.getSpecialityUpdateTimePeriodInSec());
 
-            activateTimeout();
+            if (nextSpecialityUpdate != null)
+                activateTimeout();
         }
     }
 
@@ -109,6 +134,12 @@ public class Parser {
                 Thread.sleep(100);
             }
 
+            if (lastSpeciality == null)
+                lastSpeciality = specialityRepository.findAll();
+
+            sendNotification(lastSpeciality, specialities);
+
+            lastSpeciality = specialities;
             saveSpeciality(specialities);
         } catch (Exception e) {
             log.error("update speciality failed", e);
@@ -130,8 +161,8 @@ public class Parser {
             if (response.body() != null) {
                 val results = mapper.readValue(response.body().byteStream(), LpuResponse.class).getResult();
                 if (results != null) {
-                    lpus.clear();
-                    lpus.addAll(results.stream().filter(LpuEntity::getCovidVaccination).collect(Collectors.toList()));
+                    lpus = results.stream().filter(LpuEntity::getCovidVaccination).collect(Collectors.toList());
+                    idToLpuMap = lpus.stream().collect(Collectors.toMap(LpuEntity::getId, x -> x));
                     saveLpu(results);
                 }
             }
@@ -155,6 +186,62 @@ public class Parser {
         specialityRepository.saveAll(entities);
     }
 
+
+    private synchronized void sendNotification(List<SpecialityEntity> last, List<SpecialityEntity> updated) throws MessagingException {
+        List<SpecialityChanges> changes = new LinkedList<>();
+        updated.forEach(u -> {
+            val match = last.stream().filter(x -> Objects.equals(x.getLpuId(), u.getLpuId()) && Objects.equals(x.getFerId(), u.getFerId())).findFirst();
+            val lpu = idToLpuMap.get(u.getLpuId());
+            val lastCount = match.isPresent() ? match.get().getCountFreeParticipant() : 0;
+            if (lastCount != u.getCountFreeParticipant()) {
+                val change = new SpecialityChanges();
+                change.setLpuId(u.getLpuId());
+                change.setDistrictId(lpu.getDistrictId());
+                change.setLpuName(lpu.getLpuShortName());
+                change.setServiceName(u.getName());
+                change.setLastCount(lastCount);
+                change.setUpdatedCount(u.getCountFreeParticipant());
+                changes.add(change);
+            }
+        });
+        val removed = last.stream().filter(x -> updated.stream().allMatch(y -> !Objects.equals(x.getLpuId(), y.getLpuId()) && !Objects.equals(x.getFerId(), y.getFerId()))).collect(Collectors.toList());
+        removed.forEach(r -> {
+            val lpu = idToLpuMap.get(r.getLpuId());
+            val change = new SpecialityChanges();
+            change.setLpuId(r.getLpuId());
+            change.setDistrictId(lpu.getDistrictId());
+            change.setLpuName(lpu.getLpuShortName());
+            change.setServiceName(r.getName());
+            change.setLastCount(r.getCountFreeParticipant());
+            change.setUpdatedCount(0);
+            changes.add(change);
+        });
+
+        if (changes.size() != 0) {
+            MimeMessage message = mailSender.createMimeMessage();
+            message.setFrom("info@covvac.com");
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse("aleorlov@gmail.com, maximov@danechka.com"));
+            message.setSubject("Изменения в поликниниках");
+            StringBuilder sb = new StringBuilder("<html><body>");
+            val groupped = changes.stream().filter(x -> StringUtils.isNotBlank(x.getServiceName()) && x.getServiceName().toLowerCase().contains("cov")).collect(Collectors.groupingBy(SpecialityChanges::getRefId));
+            groupped.forEach((y, z) -> {
+                sb.append("<h2>Услуга <b>\"").append(z.get(0).getServiceName()).append("\"</b></h2>")
+                        .append("<table><tr><td>Район</td><td>ЛПУ</td><td>Кол-во номерков</td></tr>");
+                z.forEach(x -> {
+                    sb.append("<tr><td>").append(idToDistrictMap.get(x.getDistrictId()).getName())
+                            .append("</td><td><a href=\"https://gorzdrav.spb.ru/service-covid-vaccination-schedule#%5B%7B%22district%22:%22")
+                            .append(x.getDistrictId()).append("%22%7D,%7B%22lpu%22:%22").append(x.getLpuId())
+                            .append("%22%7D%5D\">").append(x.getLpuName())
+                            .append("</a></td><td>").append(x.getLastCount()).append(" -> ")
+                            .append(x.getUpdatedCount()).append("</td></tr>");
+                });
+                sb.append("</table>");
+            });
+            sb.append("</body></html>");
+            message.setText(sb.toString(), "utf-8", "html");
+            mailSender.send(message);
+        }
+    }
 
     private synchronized void setNextLpuUpdate() {
         if (nextLpuUpdate == null)
